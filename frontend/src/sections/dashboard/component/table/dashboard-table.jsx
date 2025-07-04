@@ -125,6 +125,7 @@ export function DashboardTable() {
       id: index,
     }))
   );
+  
   useEffect(() => {
     if (listData?.listData) {
         const counts = listData.totalEmailCounts || {}; 
@@ -139,6 +140,7 @@ export function DashboardTable() {
       setTableData(transformData(listData?.listData, selectedTimeZone));
     }
   }, [listData, selectedTimeZone]);
+  
   const handleStartVerification = (row) => {
     dispatch(startBulkVerification(row.jobId));
     dispatch(pollJobStatus({ jobId: row.jobId }));
@@ -158,7 +160,9 @@ export function DashboardTable() {
     comparator: getComparator(table.order, table.orderBy),
     filters: filters.state,
   });
-  const dataInPage = rowInPage(dataFiltered, table.page, table.rowsPerPage);
+  
+  // Use local pagination state instead of table state
+  const dataInPage = rowInPage(dataFiltered, page, rowsPerPage);
 
   const canReset =
     !!filters.state.name ||
@@ -170,13 +174,16 @@ export function DashboardTable() {
   const handleFilterStatus = useCallback(
     (event, newValue) => {
       table.onResetPage();
+      setPage(0); // Reset local page state as well
       filters.setState({ status: newValue });
     },
     [filters, table]
   );
+  
   const isStartVerification = useSelector((state) => state.fileUpload.isStartVerification);
   const isVerificationCompleted = useSelector((state) => state.fileUpload.isVerificationCompleted);
   const [processingRowId, setProcessingRowId] = useState(null);
+  
   useEffect(() => {
     if (isVerificationCompleted && processingRowId !== null) {
       setTableData((prevData) =>
@@ -200,6 +207,7 @@ export function DashboardTable() {
     setAnchorEl(null);
     setSelectedRow(null);
   };
+  
   const [snackbarState, setSnackbarState] = useState({
     open: false,
     message: '',
@@ -210,6 +218,7 @@ export function DashboardTable() {
     if (reason === 'clickaway') return;
     setSnackbarState((prev) => ({ ...prev, open: false }));
   };
+  
   const theme = useTheme();
 
   const handleConfirmDelete = () => {
@@ -237,9 +246,26 @@ export function DashboardTable() {
       });
     }
   };
+  
   const handleOnClose = () => {
     confirmDelete.onFalse();
     handleClosePopover();
+  };
+
+  // Handle rows per page change
+  const handleRowsPerPageChange = (event) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setRowsPerPage(newRowsPerPage);
+    setPage(0);
+    // Also update the table's internal state
+    table.onRowsPerPageChange(event);
+  };
+
+  // Handle page change
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+    // Also update the table's internal state
+    table.onPageChange(event, newPage);
   };
 
   useEffect(() => {
@@ -267,6 +293,7 @@ export function DashboardTable() {
       );
     }
   }, [dispatch, selected, page, rowsPerPage, searchValue, filters.state.status]);
+  
   return (
     <Card>
       <CardHeader
@@ -334,19 +361,24 @@ export function DashboardTable() {
       </Tabs>
       <DashboardTableToolbar
         filters={filters}
-        onResetPage={table.onResetPage}
+        onResetPage={() => {
+          table.onResetPage();
+          setPage(0);
+        }}
         setSearchValue={setSearchValue}
       />
       {canReset && (
         <DashboardTableFiltersResult
           filters={filters}
           totalResults={listData?.totalEmailLists}
-          onResetPage={table.onResetPage}
+          onResetPage={() => {
+            table.onResetPage();
+            setPage(0);
+          }}
           sx={{ p: 2.5, pt: 0 }}
         />
       )}
       <Box sx={{ position: 'relative' }}>
-        {/* <Scrollbar sx={{ minHeight: 444 }}> */}
         <Table size={table.dense ? 'small' : 'medium'} sx={{}}>
           <TableHeadCustom
             showCheckbox={false}
@@ -365,10 +397,11 @@ export function DashboardTable() {
           />
 
           <TableBody>
+            {/* Use local pagination state for slicing */}
             {dataFiltered
               ?.slice(
-                table.page * table.rowsPerPage,
-                table.page * table.rowsPerPage + table.rowsPerPage
+                page * rowsPerPage,
+                page * rowsPerPage + rowsPerPage
               )
               .map((row, index) => (
                 <DashboardTableRow
@@ -377,7 +410,7 @@ export function DashboardTable() {
                   selected={table.selected.includes(row.id)}
                   onSelectRow={() => table.onSelectRow(row.id)}
                   onOpenPopover={(event) => handleOpenPopover(event, row)}
-                  dashboardTableIndex={table.page * table.rowsPerPage + index}
+                  dashboardTableIndex={page * rowsPerPage + index}
                   onStartVerification={() => handleStartVerification(row)}
                   isProcessing={processingRowId === row.id && isStartVerification}
                   isCompleted={processingRowId === row.id && isVerificationCompleted}
@@ -386,7 +419,7 @@ export function DashboardTable() {
 
             <TableEmptyRows
               height={table.dense ? 56 : 56 + 20}
-              emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered?.length)}
+              emptyRows={emptyRows(page, rowsPerPage, dataFiltered?.length)}
             />
 
             {tableData?.length === 0 ? (
@@ -404,7 +437,6 @@ export function DashboardTable() {
             )}
           </TableBody>
         </Table>
-        {/* </Scrollbar> */}
       </Box>
       <CustomPopover
         open={Boolean(anchorEl)}
@@ -467,10 +499,10 @@ export function DashboardTable() {
         page={page}
         count={listData?.totalEmailLists}
         dense={table.dense}
-        rowsPerPage={table.rowsPerPage}
-        onPageChange={(e, newPage) => setPage(newPage)}
+        rowsPerPage={rowsPerPage}
+        onPageChange={handlePageChange}
         onChangeDense={table.onChangeDense}
-        onRowsPerPageChange={table.onRowsPerPageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
       />
     </Card>
   );

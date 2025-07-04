@@ -53,16 +53,38 @@ module.exports = {
                 value: gmtOffset,
             };
             await User.findOneAndUpdate(
-                { userId },
+                { user_id: userId },
                 { timezone: timezoneData },
             );
-            // Save the timezone (use a database in production)
+
             return res.status(200).json(Response.success('Timezone saved successfully', { timezone, gmtOffset }));
         } catch (error) {
             Logs.error("Error in saving timezone: ", error);
             return res.status(500).json(Response.error("Error while saving timezone", error));
         }
 
+    },
+
+
+    /**
+     * Get The User Timezone
+     * @param {*} req 
+     * @param {*} res
+     */
+    getUserTimezone: async (req, res) => {
+        try {
+            const userId = req.user.id;
+            const user = await User.findOne({user_id:userId});
+            if (!user) {
+                return res.status(404).json(Response.error('User not found'));
+            }
+            
+            const { timezone } = user;
+            return res.status(200).json(Response.success('User timezone fetched successfully', { timezone }));
+        } catch (error) {
+            Logs.error("Error in fetching user timezone: ", error);
+            return res.status(500).json(Response.error("Error while fetching user timezone", error));
+        }
     }
 }
 

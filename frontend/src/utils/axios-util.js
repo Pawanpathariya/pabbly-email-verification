@@ -88,7 +88,8 @@ export const endpoints = {
   },
   timeZone: {
     get: "/time-zone/",
-    save: "/time-zone/"
+    save: "/time-zone/",
+    getUser: "/time-zone/user"
   }
 }
 

@@ -17,6 +17,19 @@ export const fetchTimeZones = createAsyncThunk(
     }
 );
 
+// Create async thunk for fetching user timezone
+export const fetchUserTimeZone = createAsyncThunk(
+    'timeZone/fetchUserTimeZone',
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.get(endpoints.timeZone.getUser);
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(error.response.data);
+        }
+    }
+);
+
 // Async thunk for saving selected timezone
 export const saveTimeZone = createAsyncThunk(
     'timeZone/saveTimeZone',

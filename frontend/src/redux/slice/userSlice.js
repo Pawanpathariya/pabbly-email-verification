@@ -16,7 +16,7 @@ export const fetchUserSession = createAsyncThunk(
     async (_, { rejectWithValue, dispatch }) => {
         try {
             const response = await axios.get(endpoints.auth.me);
-            console.log("User Session Response:", response.data);
+            // console.log("User Session Response:", response.data);
             dispatch(setSelectedTimeZone(response.data.data.user.timeZone));
             return response.data.data; // Extract the user data from the response
         } catch (error) {

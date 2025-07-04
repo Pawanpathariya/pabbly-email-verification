@@ -14,7 +14,6 @@ export const fetchLists = createAsyncThunk('list/',
       return {
         stats: response.data.data.stats,
         data: response.data.data,
-        totalEmailCounts: response.data.data.totalEmailCounts,
       };
     } catch (error) {
       return error.message;
@@ -33,7 +32,6 @@ export const searchLists = createAsyncThunk(
       return {
         data: response.data.data,
         stats: response.data.data.stats,
-        totalEmailCounts: response.data.data.totalEmailCounts,
       };
     } catch (error) {
       throw error.message;
